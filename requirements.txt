@@ -1,0 +1,10 @@
+tk
+fabric
+mol_ga
+scikit_mol
+PyQt5
+sqlalchemy
+requests
+pytest
+pyyaml
+
