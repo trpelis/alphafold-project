@@ -70,60 +70,46 @@ def open_hpc_submission_window():
     submission_window.title("Submit HPC Prediction Job")
     submission_window.geometry("300x200")
 
-    cpu_button = tk.Button(submission_window, text="CPU Prediction", command=lambda: open_cpu_submission_window(submission_window))
+    cpu_button = tk.Button(submission_window, text="CPU Prediction", command=lambda: submit_job("cpu"))
     cpu_button.pack(pady=20)
 
-    gpu_button = tk.Button(submission_window, text="GPU Prediction", command=lambda: open_gpu_submission_window(submission_window))
+    gpu_button = tk.Button(submission_window, text="GPU Prediction", command=lambda: submit_job("gpu"))
     gpu_button.pack(pady=20)
 
-def open_cpu_submission_window(parent_window):
-    parent_window.destroy()
+def submit_job(job_type):
+    # Open a file dialog to select the FASTA file
+    fasta_file = filedialog.askopenfilename(
+        title="Select FASTA File",
+        filetypes=(("FASTA files", "*.fasta"), ("All files", "*.*"))
+    )
 
-    cpu_window = tk.Toplevel()
-    cpu_window.title("CPU Prediction Job")
-    cpu_window.geometry("400x400")
+    if fasta_file:
+        hpc = HPCConnection()
 
-    tk.Label(cpu_window, text="Job Name:").pack(pady=5)
-    job_name_entry = tk.Entry(cpu_window, width=40)
-    job_name_entry.pack(pady=5)
+        # Upload the FASTA file
+        remote_fasta_path = f"/lustre/home/trajevsk/{os.path.basename(fasta_file)}"
+        hpc.upload_file(fasta_file, remote_fasta_path)
 
-    tk.Label(cpu_window, text="FASTA File Path:").pack(pady=5)
-    fasta_path_entry = tk.Entry(cpu_window, width=40)
-    fasta_path_entry.pack(pady=5)
+        # Define the PBS script path based on job type
+        remote_pbs_path = "/lustre/home/trajevsk/alphapulldown.pbs"
 
-    # Button to open file dialog for selecting the FASTA file
-    def browse_fasta_file():
-        fasta_path = filedialog.askopenfilename(
-            title="Select FASTA File",
-            filetypes=(("FASTA files", "*.fasta"), ("All files", "*.*"))
-        )
-        fasta_path_entry.delete(0, tk.END)
-        fasta_path_entry.insert(0, fasta_path)
+        # Submit the job
+        job_id = hpc.submit_job(remote_pbs_path, job_type)
 
-    browse_button = tk.Button(cpu_window, text="Browse", command=browse_fasta_file)
-    browse_button.pack(pady=5)
-
-    submit_btn = tk.Button(cpu_window, text="Submit CPU Job", command=lambda: submit_cpu_job(fasta_path_entry.get()))
-    submit_btn.pack(pady=20)
-
-def submit_cpu_job(fasta_path):
-    hpc = HPCConnection()
-
-    # Define paths
-    remote_fasta_path = f"/lustre/home/trajevsk/{os.path.basename(fasta_path)}"
-
-    # Upload the FASTA file to the HPC
-    hpc.upload_file(fasta_path, remote_fasta_path)
-
-    # Submit the pre-configured PBS script as a job
-    job_id = hpc.submit_job()
-
-    if job_id:
         # Monitor the job
         hpc.monitor_job(job_id)
 
-    # Close the connection
-    hpc.close()
+        # Retrieve the result (e.g., resulting FASTA file)
+        remote_result_path = f"/lustre/home/trajevsk/output/{os.path.basename(fasta_file)}.result"
+        local_result_path = os.path.join(os.getcwd(), f"{os.path.basename(fasta_file)}.result")
+        hpc.download_file(remote_result_path, local_result_path)
+
+        # Notify the user
+        notify_user(f"Job {job_id} completed successfully. Result saved to {local_result_path}.")
+
+        # Close the connection
+        hpc.close()
+
 
 def notify_user(message):
     root = tk.Tk()
