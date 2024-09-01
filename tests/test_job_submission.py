@@ -11,7 +11,7 @@ class TestJobSubmission:
     @patch('ui.event_handlers.HPCConnection.download_file')
     @patch('tkinter.Tk', return_value=Mock())  # Mock Tk to avoid GUI dependencies
     def test_submit_cpu_job(self, mock_tk, mock_download, mock_monitor, mock_submit, mock_upload, mock_askopenfilename):
-        # Setup the mock return values
+        # Ensure askopenfilename mock returns a valid file path
         mock_askopenfilename.return_value = "/local/path/to/test.fasta"
         mock_submit.return_value = "12345.job"
         mock_monitor.return_value = True
