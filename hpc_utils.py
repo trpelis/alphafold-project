@@ -1,6 +1,5 @@
 import time
 from fabric import Connection
-from invoke import UnexpectedExit
 
 hpc_host = 'trajevsk@login-cpu.hpc.srce.hr'
 base_remote_working_directory = '/lustre/home/trajevsk/alphafold'
@@ -9,43 +8,48 @@ class HPCConnection:
     def __init__(self):
         self.conn = Connection(hpc_host)
 
-    def upload_script_content(self, script_content, remote_path):
-        with self.conn.sftp() as sftp:
-            with sftp.file(remote_path, 'w') as f:
-                f.write(script_content)
-
-    def run_command(self, command):
-        result = self.conn.run(command, hide=True)
-        return result.stdout.strip()
+    def upload_file(self, local_path, remote_path):
+        try:
+            self.conn.put(local_path, remote_path)
+            print(f"Uploaded {local_path} to {remote_path}")
+        except Exception as e:
+            print(f"Failed to upload {local_path}: {e}")
 
     def download_file(self, remote_path, local_path):
-        # Ensure that the SFTP connection is active before downloading
-        with self.conn.sftp() as sftp:
-            sftp.get(remote_path, local_path)
+        try:
+            self.conn.get(remote_path, local=local_path)
+            print(f"Downloaded {remote_path} to {local_path}")
+        except Exception as e:
+            print(f"Failed to download {remote_path}: {e}")
 
-    def close(self):
-        self.conn.close()
-
-    def submit_job(self, pbs_script, job_name):
-        remote_pbs_path = f"{base_remote_working_directory}/{job_name}.pbs"
-        self.upload_script_content(pbs_script, remote_pbs_path)
-        job_id = self.run_command(f"qsub {remote_pbs_path}")
-        return job_id
+    def submit_job(self, remote_pbs_path, job_type):
+        try:
+            job_id = self.conn.run(f"qsub {remote_pbs_path}", hide=True).stdout.strip()
+            print(f"Job submitted with ID: {job_id}")
+            return job_id
+        except Exception as e:
+            print(f"Failed to submit job: {e}")
+            return None
 
     def monitor_job(self, job_id):
         job_completed = False
         while not job_completed:
             try:
-                job_state = self.run_command(f"qstat -f {job_id} | grep job_state")
-                job_state = job_state.split('=')[-1].strip()
-                if job_state in ['C', 'F']:
-                    job_completed = True
-            except UnexpectedExit as e:
-                if "Job has finished" in str(e):
-                    job_completed = True
+                result = self.conn.run(f"qstat -f {job_id} | grep job_state", hide=True).stdout.strip()
+                if result:
+                    job_state = result.split('=')[-1].strip()
+                    if job_state in ['C', 'F']:
+                        job_completed = True
                 else:
-                    raise e
+                    print(f"Job {job_id} has finished or not found.")
+                    job_completed = True
+            except Exception as e:
+                print(f"Error checking job status: {e}")
+                job_completed = True
+
             if not job_completed:
                 time.sleep(60)
-        return job_completed
+        print(f"Job {job_id} completed.")
 
+    def close(self):
+        self.conn.close()

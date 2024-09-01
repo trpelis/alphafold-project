@@ -1,9 +1,8 @@
 from ui.event_handlers import retrieve_alphafold_data, open_hpc_submission_window
+import tkinter as tk
+from tkinter import ttk, filedialog
 
 def setup_main_window(on_exit):
-    import tkinter as tk
-    from tkinter import ttk
-
     root = tk.Tk()
     root.title("Molecular Prediction Tool")
     root.geometry("500x400")
@@ -15,7 +14,7 @@ def setup_main_window(on_exit):
     entry_uniprot_id = tk.Entry(root, width=30)
     entry_uniprot_id.pack(pady=5)
 
-    # Bind the Enter key
+    # Bind the Enter key to retrieve AlphaFold data
     entry_uniprot_id.bind('<Return>', lambda event: retrieve_alphafold_data(event, entry_uniprot_id.get(), root))
 
     # Create the three task buttons
@@ -25,7 +24,16 @@ def setup_main_window(on_exit):
     btn_hpc_job = ttk.Button(root, text="Submit HPC Prediction Job", command=open_hpc_submission_window)
     btn_hpc_job.pack(pady=10, padx=20, fill=tk.X)
 
-    btn_browse_fasta = ttk.Button(root, text="Browse .fasta Files", command=lambda: print("Browsing Files"))
+    def browse_fasta_files():
+        fasta_path = filedialog.askopenfilename(
+            title="Select FASTA File",
+            filetypes=[("FASTA files", "*.fasta"), ("All files", "*.*")]
+        )
+        if fasta_path:
+            print(f"Selected file: {fasta_path}")
+            # Here you can add additional logic if you want to do something with the selected FASTA file
+
+    btn_browse_fasta = ttk.Button(root, text="Browse .fasta Files", command=browse_fasta_files)
     btn_browse_fasta.pack(pady=10, padx=20, fill=tk.X)
 
     root.protocol("WM_DELETE_WINDOW", on_exit)
