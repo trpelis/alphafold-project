@@ -51,3 +51,5 @@ class HPCConnection:
                 time.sleep(60)
         print(f"Job {job_id} completed.")
 
+    def close(self):
+        self.conn.close()

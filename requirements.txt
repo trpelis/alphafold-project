@@ -1,10 +1,18 @@
-tk
-fabric
-mol_ga
-scikit_mol
-PyQt5
-sqlalchemy
-requests
-pytest
-pyyaml
+# General dependencies
+tk  # For the Tkinter GUI
+requests  # For making HTTP requests (e.g., to the AlphaFold API)
+fabric  # For managing remote connections (e.g., to the HPC)
+paramiko  # Required by Fabric for SSH connections
+
+# Scientific and computational libraries
+numpy  # For numerical computations
+scipy  # If you have any scientific computations
+pandas  # For data manipulation
+matplotlib  # For plotting (if used)
+biopython  # For working with biological data (e.g., FASTA files)
+
+
+# Testing dependencies
+pytest  # For running tests
+pytest-mock  # For mocking in tests
 

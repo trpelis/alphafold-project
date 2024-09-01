@@ -15,7 +15,7 @@ def download_file(url, save_path):
     with open(save_path, 'wb') as file:
         file.write(response.content)
 
-def open_files(pdb_path, cif_path, png_path):
+def open_files(pdb_path, cif_path, bcif_path, png_path):
     # Open molecular structure files in PyMOL
     subprocess.Popen(['pymol', pdb_path])
     subprocess.Popen(['pymol', cif_path])
@@ -25,48 +25,45 @@ def open_files(pdb_path, cif_path, png_path):
 def retrieve_alphafold_data(event=None, uniprot_id=None, root=None):
     if not uniprot_id:
         messagebox.showerror("Input Error", "Please enter a UniProt accession ID.")
-        return None
+        return
 
     try:
         data = fetch_alphafold_data(uniprot_id, API_KEY)
         if data:
-            # Use the root parameter directly if provided
-            root_window = root if root else (event.widget.master if event else None)
-            if not root_window:
-                raise ValueError("No root window or event provided")
-
+            root_window = root if root else event.widget.master
             display_data(root_window, data)
-
+            
             # Download and open files
             base_dir = os.path.join(os.getcwd(), "downloaded_files")
             os.makedirs(base_dir, exist_ok=True)
-
+            
             for item in data:
                 pdb_url = item.get("pdbUrl")
                 cif_url = item.get("cifUrl")
+                bcif_url = item.get("bcifUrl")
                 png_url = item.get("paeImageUrl")
-
+                
                 pdb_path = os.path.join(base_dir, f"{uniprot_id}.pdb")
                 cif_path = os.path.join(base_dir, f"{uniprot_id}.cif")
+                bcif_path = os.path.join(base_dir, f"{uniprot_id}.bcif")
                 png_path = os.path.join(base_dir, f"{uniprot_id}.png")
-
+                
                 if pdb_url:
                     download_file(pdb_url, pdb_path)
                 if cif_url:
-                    download_file(cif_url, cif_path)                
+                    download_file(cif_url, cif_path)
+                if bcif_url:
+                    download_file(bcif_url, bcif_path)
                 if png_url:
                     download_file(png_url, png_path)
 
                 # Open the files after downloading
-                open_files(pdb_path, cif_path, png_path)
-
-            return data
+                open_files(pdb_path, cif_path, bcif_path, png_path)
+                
         else:
             messagebox.showinfo("No Data", "No data found for the given UniProt accession ID.")
-            return None
     except requests.exceptions.RequestException as e:
         messagebox.showerror("API Error", f"Failed to retrieve data: {e}")
-        return None
 
 def open_hpc_submission_window():
     submission_window = tk.Toplevel()

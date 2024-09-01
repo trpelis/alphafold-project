@@ -5,17 +5,15 @@ def generate_cpu_pbs_script(job_name, fasta_path, data_dir, output_dir, max_temp
 #PBS -q cpu
 #PBS -l select=1:ncpus=8:mem=40GB
 
-
 cd $PBS_O_WORKDIR
 
 # Activate AlphaPulldown environment
 module load scientific/alphapulldown/0.30.7
 
-
 # Run the create_individual_features.py script
 alphapulldown.sh create_individual_features.py \\
   --fasta_paths={fasta_path} \\
-  --data_dir=$ALPHADB \\
+  --data_dir={data_dir} \\
   --output_dir={output_dir} \\
   --save_msa_files=False \\
   --use_precomputed_msas=False \\
