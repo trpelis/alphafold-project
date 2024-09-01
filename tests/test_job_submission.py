@@ -9,13 +9,14 @@ class TestJobSubmission:
     @patch('ui.event_handlers.HPCConnection.submit_job')
     @patch('ui.event_handlers.HPCConnection.monitor_job')
     @patch('ui.event_handlers.HPCConnection.download_file')
+    @patch('tkinter.messagebox.showinfo')  # Mock messagebox.showinfo to avoid GUI-related errors
     @patch('tkinter.Tk', return_value=Mock())  # Mock Tk to avoid GUI dependencies
-    def test_submit_cpu_job(self, mock_tk, mock_download, mock_monitor, mock_submit, mock_upload, mock_askopenfilename):
-        # Ensure askopenfilename mock returns a valid file path
+    def test_submit_cpu_job(self, mock_tk, mock_showinfo, mock_download, mock_monitor, mock_submit, mock_upload, mock_askopenfilename):
+        # Setup the mock return values
         mock_askopenfilename.return_value = "/local/path/to/test.fasta"
         mock_submit.return_value = "12345.job"
         mock_monitor.return_value = True
-        
+    
         # Call the function to be tested
         submit_job("/local/path/to/test.fasta")
         
@@ -27,4 +28,5 @@ class TestJobSubmission:
         mock_submit.assert_called_once_with("/lustre/home/trajevsk/alphapulldown.pbs", "/local/path/to/test.fasta")
         mock_monitor.assert_called_once_with("12345.job")
         mock_download.assert_called_once_with("/lustre/home/trajevsk/output/test.fasta.result", expected_local_result_path)
+        mock_showinfo.assert_called_once_with("Notification", f"Job 12345.job completed successfully. Result saved to {expected_local_result_path}.")
 
