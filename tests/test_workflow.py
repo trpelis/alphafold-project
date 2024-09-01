@@ -6,7 +6,9 @@ import pytest
 @patch('ui.event_handlers.fetch_alphafold_data')
 @patch('ui.event_handlers.download_file')
 @patch('ui.event_handlers.open_files')
-def test_full_workflow(mock_fetch, mock_open_files, mock_download):
+@patch('tkinter.Tk')  # Mock the entire Tk class
+@patch('tkinter.Toplevel')  # Mock the Toplevel class if it's used
+def test_full_workflow(mock_tk, mock_toplevel, mock_fetch, mock_open_files, mock_download):
     mock_data = [{
         'entryId': 'test_entry',
         'gene': 'TestGene',
@@ -17,13 +19,9 @@ def test_full_workflow(mock_fetch, mock_open_files, mock_download):
     }]
     mock_fetch.return_value = mock_data
 
-    # Create a real Tk root window
-    root = Tk()
-    root.withdraw()  # Hide the root window
+    # Create a mock Tk root window
+    mock_tk.return_value = Mock()
 
-    try:
-        result = retrieve_alphafold_data(uniprot_id="P12345", root=root)
-        assert result is not None
-    finally:
-        root.destroy()
+    result = retrieve_alphafold_data(uniprot_id="P12345", root=mock_tk.return_value)
+    assert result is not None
 
